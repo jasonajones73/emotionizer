@@ -29,12 +29,17 @@ ui <- navbarPage(
                  fluidRow(
                      column(width = 1),
                      column(width = 3,
-                            tags$p("This application allows you to upload any PDF document and start
+                            tags$p("This application allows you to upload a PDF document and start
                                    exploring the text contained within. Once you upload a file, a 
-                                   searchable data table will render for you. Upload a PDF document 
-                                   below to start exploring!"),
+                                   searchable data table will render for you on this page. Upload 
+                                   a PDF document below to start exploring!"),
                             tags$p(fileInput(inputId = "file", label = "Choose PDF File",
-                                             accept = ".pdf"))),
+                                             accept = ".pdf")),
+                            tags$br(),
+                            tags$p("Move over to the Word Grouping tab to start exploring
+                                   your document's text by n-grams.",
+                                   tags$a(href = "https://en.wikipedia.org/wiki/N-gram", "Click
+                                          here to learn more about n-grams"))),
                      
                      column(width = 7,
                             tags$p(DTOutput("contents"))
@@ -49,7 +54,7 @@ ui <- navbarPage(
                fluidRow(
                    column(width = 1),
                    column(width = 3,
-                          tags$p(numericInput(inputId = "n", label = "Please select
+                          tags$p(sliderInput(inputId = "n", label = "Please select
                                               your grouping size", value = 2, min = 2,
                                               max = 5, step = 1))
                           ),
@@ -139,7 +144,7 @@ server <- function(input, output) {
     output$plot <- renderPlot({
         req(input$file)
         
-        file() %>%
+        original() %>%
             ggplot(aes(page_number, sent_count)) +
             geom_line(aes(color = sentiment)) +
             geom_point(aes(color = sentiment)) +
