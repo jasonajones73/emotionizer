@@ -27,6 +27,7 @@ ui <- navbarPage(
              fluidPage(
                  
                  fluidRow(
+                     column(width = 1),
                      column(width = 3,
                             tags$p("This application allows you to upload any PDF document and start
                                    exploring the text contained within. Once you upload a file, a 
@@ -35,11 +36,29 @@ ui <- navbarPage(
                             tags$p(fileInput(inputId = "file", label = "Choose PDF File",
                                              accept = ".pdf"))),
                      
-                     column(width = 9,
+                     column(width = 7,
                             tags$p(DTOutput("contents"))
-                            )
+                            ),
+                     column(width = 1)
                      )
                  )
+             ),
+    
+    tabPanel(title = "Word Grouping",
+             fluidPage(
+               fluidRow(
+                   column(width = 1),
+                   column(width = 3,
+                          tags$p(numericInput(inputId = "n", label = "Please select
+                                              your grouping size", value = 2, min = 2,
+                                              max = 5, step = 1))
+                          ),
+                   column(width = 7,
+                          tags$p(DTOutput("ngramstable"))
+                          ),
+                   column(width = 1)
+               )  
+             )
              ),
     
     tabPanel(title = "Visualize",
@@ -54,10 +73,10 @@ ui <- navbarPage(
                      
                      column(width = 9,
                             tags$p(plotOutput("plot", height = "500px")))
+                     )
                  )
-             )  
+             )
     )
-)
 
 # Define server logic
 server <- function(input, output) {
@@ -67,7 +86,13 @@ server <- function(input, output) {
         
         pdf_text(input$file$datapath) %>%
             tibble(text = .) %>%
-            mutate(page_number = row_number()) %>%
+            mutate(page_number = row_number())
+    })
+    
+    original <- reactive({
+        req(input$file)
+        
+        file() %>%
             unnest_tokens("word", "text") %>%
             anti_join(get_stopwords()) %>%
             inner_join(nrc) %>%
@@ -76,15 +101,39 @@ server <- function(input, output) {
             ungroup() %>%
             arrange(desc(sent_count)) %>%
             mutate(category = case_when(sentiment == "negative" | sentiment == "positive" ~ "Sentiment",
-                                        sentiment != "negative" & sentiment != "positive" ~ "Emotion"))
+                                        sentiment != "negative" & sentiment != "positive" ~ "Emotion")) %>%
+            mutate(sentiment = str_to_title(sentiment)) %>%
+            mutate(word = str_to_title(word)) %>%
+            select(page_number, word, sent_count, sentiment, category)
+    })
+    
+    ngram <- reactive({
+        req(input$file)
+        
+        file() %>%
+            mutate(text = str_remove_all(text, "[:punct:]")) %>%
+            mutate(text = str_remove_all(text, "[:digit:]")) %>%
+            unnest_tokens("group", "text", token = "ngrams", n = input$n) %>%
+            group_by(group) %>%
+            summarise(group_count = n()) %>%
+            ungroup() %>%
+            arrange(desc(group_count))
     })
     
     output$contents <- renderDT({
         req(input$file)
         
-        datatable(data = file(), rownames = FALSE, options = list(
-            columnDefs = list(list(className = 'dt-left', targets = 0:4))
-        ), colnames = c("Page Number", "Association", "Word", "Word Count", "Category"))
+        datatable(data = original(), rownames = FALSE, options = list(
+            columnDefs = list(list(className = 'dt-left', targets = 0:3))
+        ), colnames = c("Page Number", "Word", "Word Count", "Association", "Category"))
+    })
+    
+    output$ngramstable <- renderDT({
+        req(input$file)
+        
+        datatable(data = ngram(), rownames = FALSE, options = list(
+            columnDefs = list(list(className = 'dt-left', targets = 0:1))
+        ), colnames = c("Word Group", "Group Count"))
     })
     
     output$plot <- renderPlot({
