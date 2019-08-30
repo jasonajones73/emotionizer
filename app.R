@@ -22,7 +22,7 @@ ui <- navbarPage(
     theme = shinytheme(theme = "flatly"),
     
     header = list(tags$head(HTML('<link href="https://fonts.googleapis.com/css?family=Roboto+Mono" rel="stylesheet">')),
-                  tags$head(HTML('<style>* {font-size: 100%; font-family: Roboto Mono !important;}</style>'))),
+                  tags$head(HTML('<style>* {font-size: 100%; font-family: Roboto Mono;}</style>'))),
     
     tabPanel(title = "PDF Upload",
              
@@ -46,12 +46,8 @@ ui <- navbarPage(
                                           here to learn more about n-grams"))),
                      
                      column(width = 7,
-                            valueBox(
-                                value = uiOutput("length"),
-                                subtitle = "Document Pages",
-                                icon = icon("credit-card"),
-                                color = "green"
-                            ),
+                            tags$p(valueBoxOutput("length", width = 6)),
+                            tags$p(valueBoxOutput("tokenized", width = 6)),
                             tags$p(DTOutput("contents"))
                             ),
                      column(width = 1)
@@ -79,6 +75,7 @@ ui <- navbarPage(
     tabPanel(title = "Visualize",
              fluidPage(
                  fluidRow(
+                     column(width = 1),
                      column(width = 3,
                             tags$p("If you do not see a visualization, it is because 
                             you have not uploaded a PDF yet. Jump back over to the other
@@ -86,8 +83,9 @@ ui <- navbarPage(
                             for testing. If a use case can be determined, more customization 
                             and visualization will be made available")),
                      
-                     column(width = 9,
-                            tags$p(plotOutput("plot", height = "500px")))
+                     column(width = 7,
+                            tags$p(plotOutput("plot", height = "500px"))),
+                     column(width = 1)
                      )
                  )
              )
@@ -104,10 +102,15 @@ server <- function(input, output) {
             mutate(page_number = row_number())
     })
     
-    output$length <- renderText({
+    output$length <- renderValueBox({
         req(input$file)
         
-        prettyNum(nrow(file()), big.mark = ",")
+        valueBox(
+            value = prettyNum(nrow(file()), big.mark = ","),
+            subtitle = "Document Pages",
+            icon = icon("book"),
+            color = "green"
+        )
     })
     
     original <- reactive({
@@ -126,6 +129,17 @@ server <- function(input, output) {
             mutate(sentiment = str_to_title(sentiment)) %>%
             mutate(word = str_to_title(word)) %>%
             select(page_number, word, sent_count, sentiment, category)
+    })
+    
+    output$tokenized <- renderValueBox({
+        req(input$file)
+        
+        valueBox(
+            value = prettyNum(sum(original()$sent_count, na.rm = TRUE), big.mark = ","),
+            subtitle = "Tokenized Words",
+            icon = icon("bar-chart"),
+            color = "purple"
+        )
     })
     
     ngram <- reactive({
@@ -168,7 +182,7 @@ server <- function(input, output) {
             dark_mode() +
             scale_colour_viridis_d() +
             labs(title = "Emotion Flow",
-                 subtitle = "Horizontal line indicates document midpoint",
+                 subtitle = "Vertical line indicates document midpoint",
                  caption = "Author: Jason Jones \n Twitter: @packpridejones",
                  x = "Page Number") +
             theme(panel.background = element_blank(),
