@@ -88,7 +88,20 @@ ui <- navbarPage(
                      column(width = 1)
                      )
                  )
-             )
+             ),
+    
+    tabPanel(title = "Download Data",
+             fluidPage(
+                 fluidRow(
+                     column(width = 1),
+                     column(width = 3,
+                            tags$p("Use the download button below to export your text data as
+                                   a .CSV file. The data exported will be what you see dispalyed
+                                   on the PDF Upload tab"),
+                            tags$p(downloadButton("downloadData"))),
+                     column(width = 1)
+                 )
+             ))
     )
 
 # Define server logic
@@ -191,6 +204,15 @@ server <- function(input, output) {
                   legend.position = "none") +
             facet_wrap(~sentiment)
     })
+    
+    output$downloadData <- downloadHandler(
+        filename = function() {
+            paste("data-", Sys.Date(), ".csv", sep = "")
+        },
+        content = function(file) {
+            write.csv(original(), file)
+        }
+    )
 }
 
 # Run the application 
