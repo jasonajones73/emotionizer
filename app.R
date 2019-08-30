@@ -1,4 +1,6 @@
 library(shiny)
+library(shinyWidgets)
+library(shinydashboard)
 library(shinythemes)
 library(tidyverse)
 library(tidytext)
@@ -26,6 +28,8 @@ ui <- navbarPage(
              
              fluidPage(
                  
+                 useShinydashboard(),
+                 
                  fluidRow(
                      column(width = 1),
                      column(width = 3,
@@ -42,6 +46,12 @@ ui <- navbarPage(
                                           here to learn more about n-grams"))),
                      
                      column(width = 7,
+                            valueBox(
+                                value = uiOutput("length"),
+                                subtitle = "Document Pages",
+                                icon = icon("credit-card"),
+                                color = "green"
+                            ),
                             tags$p(DTOutput("contents"))
                             ),
                      column(width = 1)
@@ -92,6 +102,12 @@ server <- function(input, output) {
         pdf_text(input$file$datapath) %>%
             tibble(text = .) %>%
             mutate(page_number = row_number())
+    })
+    
+    output$length <- renderText({
+        req(input$file)
+        
+        prettyNum(nrow(file()), big.mark = ",")
     })
     
     original <- reactive({
