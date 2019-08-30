@@ -98,7 +98,10 @@ ui <- navbarPage(
                             tags$p("Use the download button below to export your text data as
                                    a .CSV file. The data exported will be what you see dispalyed
                                    on the PDF Upload tab"),
-                            tags$p(downloadButton("downloadData"))),
+                            tags$p(downloadButton("downloademotiondata",
+                                                  label = "Download Emotion Data")),
+                            tags$p(downloadButton("downloadoriginal",
+                                                  label = "Download Original Data"))),
                      column(width = 1)
                  )
              ))
@@ -113,6 +116,15 @@ server <- function(input, output) {
         pdf_text(input$file$datapath) %>%
             tibble(text = .) %>%
             mutate(page_number = row_number())
+    })
+    
+    downloaddat <- reactive({
+        req(input$file)
+        
+        file() %>%
+            mutate(text = str_remove_all(text, "[:punct:]")) %>%
+            mutate(text = str_remove_all(text, "[:digit:]")) %>%
+            unnest_tokens("word", "text")
     })
     
     output$length <- renderValueBox({
@@ -205,12 +217,21 @@ server <- function(input, output) {
             facet_wrap(~sentiment)
     })
     
-    output$downloadData <- downloadHandler(
+    output$downloademotiondata <- downloadHandler(
         filename = function() {
             paste("data-", Sys.Date(), ".csv", sep = "")
         },
         content = function(file) {
             write.csv(original(), file)
+        }
+    )
+    
+    output$downloadoriginal <- downloadHandler(
+        filename = function() {
+            paste("data-", Sys.Date(), ".csv", sep = "")
+        },
+        content = function(file) {
+            write.csv(downloaddat(), file)
         }
     )
 }
