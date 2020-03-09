@@ -21,8 +21,8 @@ ui <- navbarPage(
     collapsible = TRUE,
     theme = shinytheme(theme = "flatly"),
     
-    header = list(tags$head(HTML('<link href="https://fonts.googleapis.com/css?family=Roboto+Mono" rel="stylesheet">')),
-                  tags$head(HTML('<style>* {font-size: 100%; font-family: Roboto Mono;}</style>'))),
+    header = list(tags$head(HTML('<link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet">')),
+                  tags$head(HTML('<style>* {font-size: 100%; font-family: Raleway;}</style>'))),
     
     tabPanel(title = "PDF Upload",
              
@@ -41,9 +41,11 @@ ui <- navbarPage(
                                              accept = ".pdf")),
                             tags$br(),
                             tags$p("Move over to the Word Grouping tab to start exploring
-                                   your document's text by n-grams.",
-                                   tags$a(href = "https://en.wikipedia.org/wiki/N-gram", "Click
-                                          here to learn more about n-grams"))),
+                                   your document's text by n-grams.",),
+                            tags$br(),
+                            tags$a(href = "https://en.wikipedia.org/wiki/N-gram",
+                                          target="_blank",
+                                   "Click here to learn more about n-grams")),
                      
                      column(width = 7,
                             tags$p(valueBoxOutput("length", width = 6)),
