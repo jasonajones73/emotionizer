@@ -14,7 +14,7 @@ nrc <- read_rds("data/nrc.rds")
 
 # Define UI for application
 ui <- navbarPage(
-    title = img(src = "https://storage.googleapis.com/proudcity/elgl/uploads/2019/07/elgl-logo-189x64.png",
+    title = img(src = "img/logo.svg",
                 height = "100%"),
     fluid = TRUE,
     windowTitle = "The Emotionizer",
