@@ -14,8 +14,7 @@ nrc <- read_rds("data/nrc.rds")
 
 # Define UI for application
 ui <- navbarPage(
-    title = img(src = "img/logo.svg",
-                height = "100%"),
+    title = "The Emotionizer",
     fluid = TRUE,
     windowTitle = "The Emotionizer",
     collapsible = TRUE,
