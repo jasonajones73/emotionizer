@@ -6,7 +6,6 @@ library(tidyverse)
 library(tidytext)
 library(pdftools)
 library(reactable)
-library(ggdark)
 
 options(shiny.maxRequestSize=50*1024^2) 
 
@@ -77,19 +76,18 @@ ui <- navbarPage(
              )
              ),
     
-    tabPanel(title = "Visualize",
+    tabPanel(title = "Search All",
              fluidPage(
                  fluidRow(
                      column(width = 1),
                      column(width = 3,
-                            tags$p("If you do not see a visualization, it is because 
-                            you have not uploaded a PDF yet. Jump back over to the other
-                            tab and take care of that first! This is a sample visualization 
-                            for testing. If a use case can be determined, more customization 
-                            and visualization will be made available")),
+                            tags$p("If you do not see a table, it is because 
+                            you have not uploaded a PDF yet. Jump back over to the PDF Upload
+                            tab and take care of that first! This is a simple table intended
+                            for you to be able to search all text in the document by page.")),
                      
                      column(width = 7,
-                            tags$p(plotOutput("plot", height = "500px"))),
+                            tags$p(reactableOutput("doctable"))),
                      column(width = 1)
                      )
                  )
@@ -98,16 +96,19 @@ ui <- navbarPage(
     tabPanel(title = "Download Data",
              fluidPage(
                  fluidRow(
-                     column(width = 1),
-                     column(width = 3,
+                     column(width = 2),
+                     column(width = 8,
                             tags$p("Use the download button below to export your text data as
-                                   a .CSV file. The data exported will be what you see dispalyed
-                                   on the PDF Upload tab"),
+                                   a .csv file. There are two options provided for you to download your data.
+                                   The Emotion Data will have the emotion and sentiment joins with associated counts
+                                   just as you see on the PDF Upload tab after uploading data. The Original Data will 
+                                   just be the cleaned text data by page from your original upload with no other
+                                   processing."),
                             tags$p(downloadButton("downloademotiondata",
                                                   label = "Download Emotion Data")),
                             tags$p(downloadButton("downloadoriginal",
                                                   label = "Download Original Data"))),
-                     column(width = 1)
+                     column(width = 2)
                  )
              ))
     )
@@ -208,25 +209,14 @@ server <- function(input, output) {
                       ))
     })
     
-    output$plot <- renderPlot({
+    output$doctable <- renderReactable({
         req(input$file)
         
-        original() %>%
-            ggplot(aes(page_number, sent_count)) +
-            geom_line(aes(color = sentiment)) +
-            geom_point(aes(color = sentiment)) +
-            geom_vline(xintercept = median(file()$page_number)) +
-            dark_mode() +
-            scale_colour_viridis_d() +
-            labs(title = "Emotion Flow",
-                 subtitle = "Vertical line indicates document midpoint",
-                 caption = "Author: Jason Jones \n Twitter: @packpridejones",
-                 x = "Page Number") +
-            theme(panel.background = element_blank(),
-                  panel.grid.major.y = element_line(color = "light grey"),
-                  axis.title.y = element_blank(),
-                  legend.position = "none") +
-            facet_wrap(~sentiment)
+        reactable(data = downloaddat(), rownames = FALSE, filterable = TRUE,
+                  defaultColDef = colDef(align = "center"), columns = list(
+                      page_number = colDef(name = "Page Number"),
+                      word = colDef(name = "Word")
+                  ))
     })
     
     output$downloademotiondata <- downloadHandler(
