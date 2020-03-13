@@ -5,7 +5,7 @@ library(shinythemes)
 library(tidyverse)
 library(tidytext)
 library(pdftools)
-library(DT)
+library(reactable)
 library(ggdark)
 
 options(shiny.maxRequestSize=50*1024^2) 
@@ -47,9 +47,13 @@ ui <- navbarPage(
                                    "Click here to learn more about n-grams")),
                      
                      column(width = 7,
-                            tags$p(valueBoxOutput("length", width = 6)),
-                            tags$p(valueBoxOutput("tokenized", width = 6)),
-                            tags$p(DTOutput("contents"))
+                            fluidRow(
+                                tags$p(valueBoxOutput("length", width = 6)),
+                                tags$p(valueBoxOutput("tokenized", width = 6))
+                                ),
+                            fluidRow(
+                                tags$p(reactableOutput("contents"))
+                            )
                             ),
                      column(width = 1)
                      )
@@ -66,7 +70,7 @@ ui <- navbarPage(
                                               max = 5, step = 1))
                           ),
                    column(width = 7,
-                          tags$p(DTOutput("ngramstable"))
+                          tags$p(reactableOutput("ngramstable"))
                           ),
                    column(width = 1)
                )  
@@ -181,20 +185,27 @@ server <- function(input, output) {
             arrange(desc(group_count))
     })
     
-    output$contents <- renderDT({
+    output$contents <- renderReactable({
         req(input$file)
         
-        datatable(data = original(), rownames = FALSE, options = list(
-            columnDefs = list(list(className = 'dt-left', targets = 0:3))
-        ), colnames = c("Page Number", "Word", "Word Count", "Association", "Category"))
+        reactable(data = original(), rownames = FALSE,
+                  defaultColDef = colDef(align = "center"), columns = list(
+                      page_number = colDef(name = "Page Number"),
+                      word = colDef(name = "Word"),
+                      sent_count = colDef(name = "Word Count"),
+                      sentiment = colDef(name = "Association"),
+                      category = colDef(name = "Category")
+                      ))
     })
     
-    output$ngramstable <- renderDT({
+    output$ngramstable <- renderReactable({
         req(input$file)
         
-        datatable(data = ngram(), rownames = FALSE, options = list(
-            columnDefs = list(list(className = 'dt-left', targets = 0:1))
-        ), colnames = c("Word Group", "Group Count"))
+        reactable(data = ngram(), rownames = FALSE, 
+                  defaultColDef = colDef(align = "center"), columns = list(
+                      group = colDef(name = "Word Group", align = "left"),
+                      group_count = colDef(name = "Group Count")
+                      ))
     })
     
     output$plot <- renderPlot({
